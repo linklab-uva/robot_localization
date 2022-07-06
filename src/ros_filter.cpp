@@ -2297,6 +2297,53 @@ bool RosFilter<T>::setStateSrvCallback(
 {
   RCLCPP_DEBUG(get_logger(), "--setStateSrvCallback--");
   RCLCPP_DEBUG(get_logger(), "sequence number: %lld. writer guid: %s", request_header->sequence_number, std::string((char*)&(request_header->writer_guid[0])).c_str());
+
+  std::string topic_name("set_state");
+
+  // Get rid of any initial poses (pretend we've never had a measurement)
+  initial_measurements_.clear();
+  previous_measurements_.clear();
+  previous_measurement_covariances_.clear();
+
+  clearMeasurementQueue();
+
+  filter_state_history_.clear();
+  measurement_history_.clear();
+
+  // Also set the last set pose time, so we ignore all messages
+  // that occur before it
+  last_set_pose_time_ = request->pose.header.stamp;
+
+  // Set the state vector to the reported pose
+  Eigen::VectorXd measurement(STATE_SIZE);
+  Eigen::MatrixXd measurement_covariance(STATE_SIZE, STATE_SIZE);
+  std::vector<bool> update_vector(STATE_SIZE, true);
+
+  // We only measure pose variables, so initialize the vector to 0
+  measurement.setZero();
+
+  // Set this to the identity and let the message reset it
+  measurement_covariance.setIdentity();
+  measurement_covariance *= 1e-6;
+
+  // Prepare the pose data (really just using this to transform it into the
+  // target frame). Twist data is going to get zeroed out, but we'll set it later.
+  std::shared_ptr<geometry_msgs::msg::PoseWithCovarianceStamped> pose_ptr = std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>(request->pose);
+  preparePose(
+    pose_ptr, topic_name, world_frame_id_, false, false, false,
+      update_vector, measurement, measurement_covariance);
+  // Prepare the twist data.
+  std::shared_ptr<geometry_msgs::msg::TwistWithCovarianceStamped> twist_ptr = std::make_shared<geometry_msgs::msg::TwistWithCovarianceStamped>(request->twist);
+  prepareTwist(
+    twist_ptr, topic_name, world_frame_id_, update_vector, 
+      measurement, measurement_covariance);
+
+  // For the state
+  filter_.setState(measurement);
+  filter_.setEstimateErrorCovariance(measurement_covariance);
+
+  filter_.setLastMeasurementTime(this->now());
+
   response->set__success(true);
   return response->success;
 }
