@@ -2376,7 +2376,7 @@ std::string topic_name("set_state");
 
   Eigen::Matrix<double, 6, 6> msg_accel_covariance_full;
   msg_accel_covariance_full.setZero();
-  std::copy_n(msg->twist.twist.covariance.begin(), msg->twist.twist.covariance.size(), msg_accel_covariance_full.data());
+  std::copy_n(msg->accel.accel.covariance.begin(), msg->accel.accel.covariance.size(), msg_accel_covariance_full.data());
   Eigen::Matrix<double, 3, 3> msg_accel_covariance = msg_accel_covariance_full.block<3,3>(0,0);
   if (msg_accel_covariance.isApprox(msg_accel_covariance.transpose()))
   {
