@@ -2318,7 +2318,6 @@ bool RosFilter<T>::setStateSrvCallback(
   // Set the state vector to the reported pose
   Eigen::VectorXd measurement(STATE_SIZE);
   Eigen::MatrixXd measurement_covariance(STATE_SIZE, STATE_SIZE);
-  std::vector<bool> update_vector(STATE_SIZE, true);
 
   // We only measure pose variables, so initialize the vector to 0
   measurement.setZero();
@@ -2329,15 +2328,21 @@ bool RosFilter<T>::setStateSrvCallback(
 
   // Prepare the pose data (really just using this to transform it into the
   // target frame). Twist data is going to get zeroed out, but we'll set it later.
+  std::vector<bool> update_vector_pose(STATE_SIZE, false);
+  update_vector_pose[StateMemberX]=update_vector_pose[StateMemberY]=update_vector_pose[StateMemberZ]=
+  update_vector_pose[StateMemberRoll]=update_vector_pose[StateMemberPitch]=update_vector_pose[StateMemberYaw]=true;
   std::shared_ptr<geometry_msgs::msg::PoseWithCovarianceStamped> pose_ptr = std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>(request->pose);
   preparePose(
     pose_ptr, topic_name, world_frame_id_, false, false, false,
-      update_vector, measurement, measurement_covariance);
-      
+      update_vector_pose, measurement, measurement_covariance);
+
   // Prepare the twist data.
+  std::vector<bool> update_vector_twist(STATE_SIZE, false);
+  update_vector_twist[StateMemberVx]=update_vector_twist[StateMemberVx]=update_vector_twist[StateMemberVx]=
+  update_vector_twist[StateMemberVroll]=update_vector_twist[StateMemberVpitch]=update_vector_twist[StateMemberVyaw]=true;
   std::shared_ptr<geometry_msgs::msg::TwistWithCovarianceStamped> twist_ptr = std::make_shared<geometry_msgs::msg::TwistWithCovarianceStamped>(request->twist);
   prepareTwist(
-    twist_ptr, topic_name, world_frame_id_, update_vector, 
+    twist_ptr, topic_name, world_frame_id_, update_vector_twist, 
       measurement, measurement_covariance);
 
   // Prepare the acceleration data.
