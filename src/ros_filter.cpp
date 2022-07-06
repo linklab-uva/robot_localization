@@ -2377,10 +2377,10 @@ std::string topic_name("set_state");
   Eigen::Matrix<double, 6, 6> msg_accel_covariance_full;
   msg_accel_covariance_full.setZero();
   std::copy_n(msg->accel.accel.covariance.begin(), msg->accel.accel.covariance.size(), msg_accel_covariance_full.data());
-  Eigen::Matrix<double, 3, 3> msg_accel_covariance = msg_accel_covariance_full.block<3,3>(0,0);
+  Eigen::Matrix3d msg_accel_covariance = msg_accel_covariance_full.block<3,3>(0,0);
   if (msg_accel_covariance.isApprox(msg_accel_covariance.transpose()))
   {
-    Eigen::Vector< std::complex< double >, 3 > eigenvalues = msg_accel_covariance.eigenvalues();
+    Eigen::Vector3cd eigenvalues = msg_accel_covariance.eigenvalues();
     bool all_real_and_nonnegative = true;
     for(std::complex< double > eigval : eigenvalues) { all_real_and_nonnegative = all_real_and_nonnegative && eigval.real()>=0.0 && std::abs(eigval.imag())<1E-6; }
     if(all_real_and_nonnegative)
@@ -2391,12 +2391,7 @@ std::string topic_name("set_state");
       std::shared_ptr<sensor_msgs::msg::Imu> imu_ptr(new sensor_msgs::msg::Imu);
       imu_ptr->set__header(msg->accel.header);
       imu_ptr->set__linear_acceleration(msg->accel.accel.accel.linear);
-      Eigen::Matrix<double, 6, 6> accel_cov_full;
-      accel_cov_full.setIdentity();
-      accel_cov_full*=1e-6;
-      std::copy_n(msg->accel.accel.covariance.begin(), msg->accel.accel.covariance.size(), accel_cov_full.data());
-      Eigen::Matrix3d linear_accel_cov = accel_cov_full.block<3,3>(0,0);
-      std::copy_n(linear_accel_cov.data(), linear_accel_cov.size(), imu_ptr->linear_acceleration_covariance.data());
+      std::copy_n(msg_accel_covariance.data(), msg_accel_covariance.size(), imu_ptr->linear_acceleration_covariance.data());
       prepareAcceleration(
         imu_ptr, topic_name, world_frame_id_, update_vector_imu, 
           measurement, measurement_covariance);
