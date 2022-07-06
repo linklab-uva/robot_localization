@@ -1098,6 +1098,13 @@ void RosFilter<T>::loadParams()
       &RosFilter<T>::setPoseSrvCallback, this,
       std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
+  // Create a service more manually setting/resetting the internal state
+  set_state_service_ = 
+    this->create_service<robot_localization::srv::SetState>(
+    "set_state", std::bind(
+      &RosFilter<T>::setStateSrvCallback, this,
+      std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+
   // Create a service for manually enabling the filter
   enable_filter_srv_ =
     this->create_service<std_srvs::srv::Empty>(
@@ -2281,6 +2288,14 @@ void RosFilter<T>::setPoseCallback(
   filter_.setLastMeasurementTime(this->now());
 
   RF_DEBUG("\n------ /RosFilter<T>::setPoseCallback ------\n");
+}
+template<typename T>
+bool RosFilter<T>::setStateSrvCallback(
+  const std::shared_ptr<rmw_request_id_t>/*request_header*/,
+  const std::shared_ptr<robot_localization::srv::SetState::Request> request,
+  std::shared_ptr<robot_localization::srv::SetState::Response>/*response*/)
+{
+  return true;
 }
 
 template<typename T>

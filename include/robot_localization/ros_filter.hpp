@@ -56,6 +56,7 @@
 #include "robot_localization/measurement.hpp"
 #include "robot_localization/srv/toggle_filter_processing.hpp"
 #include "robot_localization/srv/set_pose.hpp"
+#include "robot_localization/srv/set_state.hpp"
 #include "sensor_msgs/msg/imu.hpp"
 #include "std_srvs/srv/empty.hpp"
 #include "tf2/LinearMath/Transform.h"
@@ -280,6 +281,16 @@ public:
     const std::shared_ptr<rmw_request_id_t>,
     const std::shared_ptr<std_srvs::srv::Empty::Request>,
     const std::shared_ptr<std_srvs::srv::Empty::Response>);
+
+  //! @brief Service callback for manually setting/resetting the whole internal state estimate of the filter (not just the pose)
+  //!
+  //! @param[in] request - Custom service request with pose information
+  //! @return true if successful, false if not
+  bool setStateSrvCallback(
+    const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<robot_localization::srv::SetState::Request> request,
+    std::shared_ptr<robot_localization::srv::SetState::Response> response);
+
 
   //! @brief Callback method for manually setting/resetting the internal pose
   //! estimate
@@ -748,11 +759,17 @@ protected:
   rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr
     set_pose_sub_;
 
-  //! @brief Service that allows another node to change the current state and
+  //! @brief Service that allows another node to change the current pose and
   //! recieve a confirmation. Uses a custom SetPose service.
   //!
   rclcpp::Service<robot_localization::srv::SetPose>::SharedPtr
     set_pose_service_;
+
+  //! @brief Service that allows another node to change the current state
+  //! (not just the pose) and recieve a confirmation. Uses a custom SetState service.
+  //!
+  rclcpp::Service<robot_localization::srv::SetState>::SharedPtr
+    set_state_service_;
 
   //! @brief Service that allows another node to enable the filter. Uses a
   //! standard Empty service.
