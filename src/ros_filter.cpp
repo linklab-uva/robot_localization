@@ -2350,7 +2350,7 @@ bool RosFilter<T>::setStateSrvCallback(
   accel_cov_full*=1e-6;
   std::copy_n(request->accel.accel.covariance.begin(), request->accel.accel.covariance.size(), accel_cov_full.data());
   Eigen::Matrix3d linear_accel_cov = accel_cov_full.block<3,3>(0,0);
-  std::copy_n(linear_accel_cov.data(), imu_ptr->linear_acceleration_covariance.size(), imu_ptr->linear_acceleration_covariance.data());
+  std::copy_n(linear_accel_cov.data(), linear_accel_cov.size(), imu_ptr->linear_acceleration_covariance.data());
   prepareAcceleration(
     imu_ptr, topic_name, world_frame_id_, update_vector_imu, 
       measurement, measurement_covariance);
