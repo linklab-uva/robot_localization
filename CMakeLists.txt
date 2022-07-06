@@ -77,6 +77,11 @@ add_library(
 rosidl_get_typesupport_target(cpp_typesupport_target "${PROJECT_NAME}" "rosidl_typesupport_cpp")
 target_link_libraries(${library_name} "${cpp_typesupport_target}")
 
+if(WIN32)
+  set_target_properties(${library_name} PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
+  target_compile_definitions(${library_name} PUBLIC "_USE_MATH_DEFINES")
+endif()
+
 add_executable(
   ekf_node
   src/ekf_node.cpp
