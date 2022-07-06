@@ -2340,7 +2340,7 @@ void RosFilter<T>::setStateCallback(const robot_localization::msg::State::Shared
     bool all_real_and_nonnegative = true;
     for(std::complex< double > eigval : eigenvalues) { 
       all_real_and_nonnegative = all_real_and_nonnegative 
-        && eigval.real()>=0.0 && std::abs(eigval.imag())<1E-6;
+        && eigval.real()>0.0 && std::abs(eigval.imag())<1E-6;
     }
     if(all_real_and_nonnegative){
       // Prepare the pose data (really just using this to transform it into the
@@ -2353,7 +2353,7 @@ void RosFilter<T>::setStateCallback(const robot_localization::msg::State::Shared
         pose_ptr, topic_name, world_frame_id_, false, false, false,
           update_vector_pose, measurement, measurement_covariance);
     }else{
-      RCLCPP_INFO(get_logger(), "Not setting pose because pose covariance is not positive semi-definite");
+      RCLCPP_INFO(get_logger(), "Not setting pose because pose covariance is not positive definite");
     }
   }else{
     RCLCPP_INFO(get_logger(), "Not setting pose because pose covariance is not symmetric");
@@ -2368,7 +2368,7 @@ void RosFilter<T>::setStateCallback(const robot_localization::msg::State::Shared
     bool all_real_and_nonnegative = true;
     for(std::complex< double > eigval : eigenvalues) { 
       all_real_and_nonnegative = all_real_and_nonnegative 
-        && eigval.real()>=0.0 && std::abs(eigval.imag())<1E-6;
+        && eigval.real()>0.0 && std::abs(eigval.imag())<1E-6;
     }
     if(all_real_and_nonnegative) {
       // Prepare the twist data.
@@ -2380,7 +2380,7 @@ void RosFilter<T>::setStateCallback(const robot_localization::msg::State::Shared
         twist_ptr, topic_name, world_frame_id_, update_vector_twist, 
           measurement, measurement_covariance);
     }else{
-      RCLCPP_INFO(get_logger(), "Not setting twist because twist covariance is not positive semi-definite");
+      RCLCPP_INFO(get_logger(), "Not setting twist because twist covariance is not positive definite");
     }
   }else{
       RCLCPP_INFO(get_logger(), "Not setting twist because twist covariance is not symmetric");
@@ -2396,7 +2396,7 @@ void RosFilter<T>::setStateCallback(const robot_localization::msg::State::Shared
     bool all_real_and_nonnegative = true;
     for(std::complex< double > eigval : eigenvalues) { 
       all_real_and_nonnegative = all_real_and_nonnegative 
-        && eigval.real()>=0.0 && std::abs(eigval.imag())<1E-6;
+        && eigval.real()>0.0 && std::abs(eigval.imag())<1E-6;
     }
     if(all_real_and_nonnegative){
       // Prepare the acceleration data.
@@ -2410,7 +2410,7 @@ void RosFilter<T>::setStateCallback(const robot_localization::msg::State::Shared
         imu_ptr, topic_name, world_frame_id_, update_vector_imu, 
           measurement, measurement_covariance);
     }else{
-      RCLCPP_INFO(get_logger(), "Not setting acceleration because acceleration covariance is not positive semi-definite");
+      RCLCPP_INFO(get_logger(), "Not setting acceleration because acceleration covariance is not positive definite");
     }
   }else{
     RCLCPP_INFO(get_logger(), "Not setting acceleration because acceleration covariance is not symmetric");
