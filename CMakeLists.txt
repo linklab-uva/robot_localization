@@ -82,6 +82,7 @@ target_link_libraries(${library_name} "${cpp_typesupport_target}")
 if(WIN32)
   set_target_properties(${library_name} PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
   target_compile_definitions(${library_name} PUBLIC "_USE_MATH_DEFINES")
+  target_compile_options(${library_name} PRIVATE "/bigobj")
 endif()
 
 add_executable(
