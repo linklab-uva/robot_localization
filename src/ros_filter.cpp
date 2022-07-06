@@ -139,12 +139,14 @@ RosFilter<T>::~RosFilter()
   topic_subs_.clear();
   timer_.reset();
   set_pose_sub_.reset();
+  set_state_sub_.reset();
   control_sub_.reset();
   tf_listener_.reset();
   tf_buffer_.reset();
   diagnostic_updater_.reset();
   world_transform_broadcaster_.reset();
   set_pose_service_.reset();
+  set_state_service_.reset();
   freq_diag_.reset();
   accel_pub_.reset();
   position_pub_.reset();
@@ -1091,6 +1093,12 @@ void RosFilter<T>::loadParams()
     this->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
     "set_pose", rclcpp::QoS(1),
     std::bind(&RosFilter<T>::setPoseCallback, this, std::placeholders::_1));
+
+  // Create a subscriber for manually setting/resetting state
+  set_state_sub_ =
+    this->create_subscription<robot_localization::msg::State>(
+    "set_state", rclcpp::QoS(1),
+    std::bind(&RosFilter<T>::setStateCallback, this, std::placeholders::_1));
 
   // Create a service for manually setting/resetting pose
   set_pose_service_ =
@@ -2291,15 +2299,9 @@ void RosFilter<T>::setPoseCallback(
   RF_DEBUG("\n------ /RosFilter<T>::setPoseCallback ------\n");
 }
 template<typename T>
-bool RosFilter<T>::setStateSrvCallback(
-  const std::shared_ptr<rmw_request_id_t> request_header,
-  const std::shared_ptr<robot_localization::srv::SetState::Request> request,
-  std::shared_ptr<robot_localization::srv::SetState::Response> response)
+void RosFilter<T>::setStateCallback(const robot_localization::msg::State::SharedPtr msg)
 {
-  RCLCPP_DEBUG(get_logger(), "--setStateSrvCallback--");
-  RCLCPP_DEBUG(get_logger(), "sequence number: %lld. writer guid: %s", request_header->sequence_number, std::string((char*)&(request_header->writer_guid[0])).c_str());
-
-  std::string topic_name("set_state");
+std::string topic_name("set_state");
 
   // Get rid of any initial poses (pretend we've never had a measurement)
   initial_measurements_.clear();
@@ -2313,7 +2315,7 @@ bool RosFilter<T>::setStateSrvCallback(
 
   // Also set the last set pose time, so we ignore all messages
   // that occur before it
-  last_set_pose_time_ = request->state.pose.header.stamp;
+  last_set_pose_time_ = msg->pose.header.stamp;
 
   // Set the state vector to the reported pose
   Eigen::VectorXd measurement(STATE_SIZE);
@@ -2331,7 +2333,7 @@ bool RosFilter<T>::setStateSrvCallback(
   std::vector<bool> update_vector_pose(STATE_SIZE, false);
   update_vector_pose[StateMemberX]=update_vector_pose[StateMemberY]=update_vector_pose[StateMemberZ]=
   update_vector_pose[StateMemberRoll]=update_vector_pose[StateMemberPitch]=update_vector_pose[StateMemberYaw]=true;
-  std::shared_ptr<geometry_msgs::msg::PoseWithCovarianceStamped> pose_ptr = std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>(request->state.pose);
+  std::shared_ptr<geometry_msgs::msg::PoseWithCovarianceStamped> pose_ptr = std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>(msg->pose);
   preparePose(
     pose_ptr, topic_name, world_frame_id_, false, false, false,
       update_vector_pose, measurement, measurement_covariance);
@@ -2340,7 +2342,7 @@ bool RosFilter<T>::setStateSrvCallback(
   std::vector<bool> update_vector_twist(STATE_SIZE, false);
   update_vector_twist[StateMemberVx]=update_vector_twist[StateMemberVx]=update_vector_twist[StateMemberVx]=
   update_vector_twist[StateMemberVroll]=update_vector_twist[StateMemberVpitch]=update_vector_twist[StateMemberVyaw]=true;
-  std::shared_ptr<geometry_msgs::msg::TwistWithCovarianceStamped> twist_ptr = std::make_shared<geometry_msgs::msg::TwistWithCovarianceStamped>(request->state.twist);
+  std::shared_ptr<geometry_msgs::msg::TwistWithCovarianceStamped> twist_ptr = std::make_shared<geometry_msgs::msg::TwistWithCovarianceStamped>(msg->twist);
   prepareTwist(
     twist_ptr, topic_name, world_frame_id_, update_vector_twist, 
       measurement, measurement_covariance);
@@ -2349,12 +2351,12 @@ bool RosFilter<T>::setStateSrvCallback(
   std::vector<bool> update_vector_imu(STATE_SIZE, false);
   update_vector_imu[StateMemberAx]=update_vector_imu[StateMemberAy]=update_vector_imu[StateMemberAz]=true;
   std::shared_ptr<sensor_msgs::msg::Imu> imu_ptr(new sensor_msgs::msg::Imu);
-  imu_ptr->set__header(request->state.accel.header);
-  imu_ptr->set__linear_acceleration(request->state.accel.accel.accel.linear);
+  imu_ptr->set__header(msg->accel.header);
+  imu_ptr->set__linear_acceleration(msg->accel.accel.accel.linear);
   Eigen::Matrix<double, 6, 6> accel_cov_full;
   accel_cov_full.setIdentity();
   accel_cov_full*=1e-6;
-  std::copy_n(request->state.accel.accel.covariance.begin(), request->state.accel.accel.covariance.size(), accel_cov_full.data());
+  std::copy_n(msg->accel.accel.covariance.begin(), msg->accel.accel.covariance.size(), accel_cov_full.data());
   Eigen::Matrix3d linear_accel_cov = accel_cov_full.block<3,3>(0,0);
   std::copy_n(linear_accel_cov.data(), linear_accel_cov.size(), imu_ptr->linear_acceleration_covariance.data());
   prepareAcceleration(
@@ -2366,9 +2368,28 @@ bool RosFilter<T>::setStateSrvCallback(
   filter_.setEstimateErrorCovariance(measurement_covariance);
 
   filter_.setLastMeasurementTime(this->now());
-
-  response->set__success(true);
+}
+template<typename T>
+bool RosFilter<T>::setStateSrvCallback(
+  const std::shared_ptr<rmw_request_id_t> request_header,
+  const std::shared_ptr<robot_localization::srv::SetState::Request> request,
+  std::shared_ptr<robot_localization::srv::SetState::Response> response)
+{
+  RCLCPP_DEBUG(get_logger(), "--setStateSrvCallback--");
+  RCLCPP_DEBUG(get_logger(), "sequence number: %lld. writer guid: %s", request_header->sequence_number, std::string((char*)&(request_header->writer_guid[0])).c_str());
+  try
+  {
+    std::shared_ptr<robot_localization::msg::State> state_ptr = std::make_shared<robot_localization::msg::State>(request->state);
+    setStateCallback(state_ptr);
+    response->set__success(true);
+  }
+  catch(const std::exception& e)
+  {
+    RCLCPP_ERROR(get_logger(), "Unable to set EKF state: %s" , e.what());
+    response->set__success(false);
+  }
   return response->success;
+  
 }
 
 template<typename T>

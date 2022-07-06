@@ -282,9 +282,15 @@ public:
     const std::shared_ptr<std_srvs::srv::Empty::Request>,
     const std::shared_ptr<std_srvs::srv::Empty::Response>);
 
+  //! @brief Topic callback for manually setting/resetting the whole internal state estimate of the filter (not just the pose)
+  //!
+  //! @param[in] msg - Custom message with pose, twist, and accel information
+  void setStateCallback(
+    const robot_localization::msg::State::SharedPtr msg);
+
   //! @brief Service callback for manually setting/resetting the whole internal state estimate of the filter (not just the pose)
   //!
-  //! @param[in] request - Custom service request with pose information
+  //! @param[in] request - Custom service request with pose, twist, and accel information
   //! @return true if successful, false if not
   bool setStateSrvCallback(
     const std::shared_ptr<rmw_request_id_t> request_header,
@@ -758,6 +764,12 @@ protected:
   //!
   rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr
     set_pose_sub_;
+
+  //! @brief Subscribes to the set_state topic 
+  //! Message type is robot_localization/State.
+  //!
+  rclcpp::Subscription<robot_localization::msg::State>::SharedPtr
+    set_state_sub_;
 
   //! @brief Service that allows another node to change the current pose and
   //! recieve a confirmation. Uses a custom SetPose service.
