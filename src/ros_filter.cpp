@@ -78,6 +78,9 @@
 #include "tf2_ros/transform_broadcaster.h"
 #include "tf2_ros/transform_listener.h"
 
+#include <Eigen/Eigenvalues>
+
+
 namespace robot_localization
 {
 using namespace std::chrono_literals;
@@ -2328,40 +2331,77 @@ std::string topic_name("set_state");
   measurement_covariance.setIdentity();
   measurement_covariance *= 1e-6;
 
-  // Prepare the pose data (really just using this to transform it into the
-  // target frame). Twist data is going to get zeroed out, but we'll set it later.
-  std::vector<bool> update_vector_pose(STATE_SIZE, false);
-  update_vector_pose[StateMemberX]=update_vector_pose[StateMemberY]=update_vector_pose[StateMemberZ]=
-  update_vector_pose[StateMemberRoll]=update_vector_pose[StateMemberPitch]=update_vector_pose[StateMemberYaw]=true;
-  std::shared_ptr<geometry_msgs::msg::PoseWithCovarianceStamped> pose_ptr = std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>(msg->pose);
-  preparePose(
-    pose_ptr, topic_name, world_frame_id_, false, false, false,
-      update_vector_pose, measurement, measurement_covariance);
+  Eigen::Matrix<double, 6, 6> msg_pose_covariance;
+  msg_pose_covariance.setZero();
+  std::copy_n(msg->pose.pose.covariance.begin(), msg->pose.pose.covariance.size(), msg_pose_covariance.data());
+  if (msg_pose_covariance.isApprox(msg_pose_covariance.transpose()))
+  {
+    Eigen::Vector< std::complex< double >, 6 > eigenvalues = msg_pose_covariance.eigenvalues();
+    bool all_real_and_nonnegative = true;
+    for(std::complex< double > eigval : eigenvalues) { all_real_and_nonnegative = all_real_and_nonnegative && eigval.real()>=0.0 && std::abs(eigval.imag())<1E-6; }
+    if(all_real_and_nonnegative)
+    {
+      // Prepare the pose data (really just using this to transform it into the
+      // target frame). Twist data is going to get zeroed out, but we'll set it later.
+      std::vector<bool> update_vector_pose(STATE_SIZE, false);
+      update_vector_pose[StateMemberX]=update_vector_pose[StateMemberY]=update_vector_pose[StateMemberZ]=
+      update_vector_pose[StateMemberRoll]=update_vector_pose[StateMemberPitch]=update_vector_pose[StateMemberYaw]=true;
+      std::shared_ptr<geometry_msgs::msg::PoseWithCovarianceStamped> pose_ptr = std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>(msg->pose);
+      preparePose(
+        pose_ptr, topic_name, world_frame_id_, false, false, false,
+          update_vector_pose, measurement, measurement_covariance);
+    }
+  }
 
-  // Prepare the twist data.
-  std::vector<bool> update_vector_twist(STATE_SIZE, false);
-  update_vector_twist[StateMemberVx]=update_vector_twist[StateMemberVx]=update_vector_twist[StateMemberVx]=
-  update_vector_twist[StateMemberVroll]=update_vector_twist[StateMemberVpitch]=update_vector_twist[StateMemberVyaw]=true;
-  std::shared_ptr<geometry_msgs::msg::TwistWithCovarianceStamped> twist_ptr = std::make_shared<geometry_msgs::msg::TwistWithCovarianceStamped>(msg->twist);
-  prepareTwist(
-    twist_ptr, topic_name, world_frame_id_, update_vector_twist, 
-      measurement, measurement_covariance);
+  Eigen::Matrix<double, 6, 6> msg_twist_covariance;
+  msg_twist_covariance.setZero();
+  std::copy_n(msg->twist.twist.covariance.begin(), msg->twist.twist.covariance.size(), msg_twist_covariance.data());
+  if (msg_twist_covariance.isApprox(msg_twist_covariance.transpose()))
+  {
+    Eigen::Vector< std::complex< double >, 6 > eigenvalues = msg_twist_covariance.eigenvalues();
+    bool all_real_and_nonnegative = true;
+    for(std::complex< double > eigval : eigenvalues) { all_real_and_nonnegative = all_real_and_nonnegative && eigval.real()>=0.0 && std::abs(eigval.imag())<1E-6; }
+    if(all_real_and_nonnegative)
+    {
+      // Prepare the twist data.
+      std::vector<bool> update_vector_twist(STATE_SIZE, false);
+      update_vector_twist[StateMemberVx]=update_vector_twist[StateMemberVx]=update_vector_twist[StateMemberVx]=
+      update_vector_twist[StateMemberVroll]=update_vector_twist[StateMemberVpitch]=update_vector_twist[StateMemberVyaw]=true;
+      std::shared_ptr<geometry_msgs::msg::TwistWithCovarianceStamped> twist_ptr = std::make_shared<geometry_msgs::msg::TwistWithCovarianceStamped>(msg->twist);
+      prepareTwist(
+        twist_ptr, topic_name, world_frame_id_, update_vector_twist, 
+          measurement, measurement_covariance);
+    }
+  }
 
-  // Prepare the acceleration data.
-  std::vector<bool> update_vector_imu(STATE_SIZE, false);
-  update_vector_imu[StateMemberAx]=update_vector_imu[StateMemberAy]=update_vector_imu[StateMemberAz]=true;
-  std::shared_ptr<sensor_msgs::msg::Imu> imu_ptr(new sensor_msgs::msg::Imu);
-  imu_ptr->set__header(msg->accel.header);
-  imu_ptr->set__linear_acceleration(msg->accel.accel.accel.linear);
-  Eigen::Matrix<double, 6, 6> accel_cov_full;
-  accel_cov_full.setIdentity();
-  accel_cov_full*=1e-6;
-  std::copy_n(msg->accel.accel.covariance.begin(), msg->accel.accel.covariance.size(), accel_cov_full.data());
-  Eigen::Matrix3d linear_accel_cov = accel_cov_full.block<3,3>(0,0);
-  std::copy_n(linear_accel_cov.data(), linear_accel_cov.size(), imu_ptr->linear_acceleration_covariance.data());
-  prepareAcceleration(
-    imu_ptr, topic_name, world_frame_id_, update_vector_imu, 
-      measurement, measurement_covariance);
+  Eigen::Matrix<double, 6, 6> msg_accel_covariance_full;
+  msg_accel_covariance_full.setZero();
+  std::copy_n(msg->twist.twist.covariance.begin(), msg->twist.twist.covariance.size(), msg_accel_covariance_full.data());
+  Eigen::Matrix<double, 3, 3> msg_accel_covariance = msg_accel_covariance_full.block<3,3>(0,0);
+  if (msg_accel_covariance.isApprox(msg_accel_covariance.transpose()))
+  {
+    Eigen::Vector< std::complex< double >, 3 > eigenvalues = msg_accel_covariance.eigenvalues();
+    bool all_real_and_nonnegative = true;
+    for(std::complex< double > eigval : eigenvalues) { all_real_and_nonnegative = all_real_and_nonnegative && eigval.real()>=0.0 && std::abs(eigval.imag())<1E-6; }
+    if(all_real_and_nonnegative)
+    {
+      // Prepare the acceleration data.
+      std::vector<bool> update_vector_imu(STATE_SIZE, false);
+      update_vector_imu[StateMemberAx]=update_vector_imu[StateMemberAy]=update_vector_imu[StateMemberAz]=true;
+      std::shared_ptr<sensor_msgs::msg::Imu> imu_ptr(new sensor_msgs::msg::Imu);
+      imu_ptr->set__header(msg->accel.header);
+      imu_ptr->set__linear_acceleration(msg->accel.accel.accel.linear);
+      Eigen::Matrix<double, 6, 6> accel_cov_full;
+      accel_cov_full.setIdentity();
+      accel_cov_full*=1e-6;
+      std::copy_n(msg->accel.accel.covariance.begin(), msg->accel.accel.covariance.size(), accel_cov_full.data());
+      Eigen::Matrix3d linear_accel_cov = accel_cov_full.block<3,3>(0,0);
+      std::copy_n(linear_accel_cov.data(), linear_accel_cov.size(), imu_ptr->linear_acceleration_covariance.data());
+      prepareAcceleration(
+        imu_ptr, topic_name, world_frame_id_, update_vector_imu, 
+          measurement, measurement_covariance);
+    }
+  }
 
   // For the state
   filter_.setState(measurement);
