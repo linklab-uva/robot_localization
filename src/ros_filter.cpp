@@ -2313,7 +2313,7 @@ bool RosFilter<T>::setStateSrvCallback(
 
   // Also set the last set pose time, so we ignore all messages
   // that occur before it
-  last_set_pose_time_ = request->pose.header.stamp;
+  last_set_pose_time_ = request->state.pose.header.stamp;
 
   // Set the state vector to the reported pose
   Eigen::VectorXd measurement(STATE_SIZE);
@@ -2331,7 +2331,7 @@ bool RosFilter<T>::setStateSrvCallback(
   std::vector<bool> update_vector_pose(STATE_SIZE, false);
   update_vector_pose[StateMemberX]=update_vector_pose[StateMemberY]=update_vector_pose[StateMemberZ]=
   update_vector_pose[StateMemberRoll]=update_vector_pose[StateMemberPitch]=update_vector_pose[StateMemberYaw]=true;
-  std::shared_ptr<geometry_msgs::msg::PoseWithCovarianceStamped> pose_ptr = std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>(request->pose);
+  std::shared_ptr<geometry_msgs::msg::PoseWithCovarianceStamped> pose_ptr = std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>(request->state.pose);
   preparePose(
     pose_ptr, topic_name, world_frame_id_, false, false, false,
       update_vector_pose, measurement, measurement_covariance);
@@ -2340,7 +2340,7 @@ bool RosFilter<T>::setStateSrvCallback(
   std::vector<bool> update_vector_twist(STATE_SIZE, false);
   update_vector_twist[StateMemberVx]=update_vector_twist[StateMemberVx]=update_vector_twist[StateMemberVx]=
   update_vector_twist[StateMemberVroll]=update_vector_twist[StateMemberVpitch]=update_vector_twist[StateMemberVyaw]=true;
-  std::shared_ptr<geometry_msgs::msg::TwistWithCovarianceStamped> twist_ptr = std::make_shared<geometry_msgs::msg::TwistWithCovarianceStamped>(request->twist);
+  std::shared_ptr<geometry_msgs::msg::TwistWithCovarianceStamped> twist_ptr = std::make_shared<geometry_msgs::msg::TwistWithCovarianceStamped>(request->state.twist);
   prepareTwist(
     twist_ptr, topic_name, world_frame_id_, update_vector_twist, 
       measurement, measurement_covariance);
@@ -2349,12 +2349,12 @@ bool RosFilter<T>::setStateSrvCallback(
   std::vector<bool> update_vector_imu(STATE_SIZE, false);
   update_vector_imu[StateMemberAx]=update_vector_imu[StateMemberAy]=update_vector_imu[StateMemberAz]=true;
   std::shared_ptr<sensor_msgs::msg::Imu> imu_ptr(new sensor_msgs::msg::Imu);
-  imu_ptr->set__header(request->accel.header);
-  imu_ptr->set__linear_acceleration(request->accel.accel.accel.linear);
+  imu_ptr->set__header(request->state.accel.header);
+  imu_ptr->set__linear_acceleration(request->state.accel.accel.accel.linear);
   Eigen::Matrix<double, 6, 6> accel_cov_full;
   accel_cov_full.setIdentity();
   accel_cov_full*=1e-6;
-  std::copy_n(request->accel.accel.covariance.begin(), request->accel.accel.covariance.size(), accel_cov_full.data());
+  std::copy_n(request->state.accel.accel.covariance.begin(), request->state.accel.accel.covariance.size(), accel_cov_full.data());
   Eigen::Matrix3d linear_accel_cov = accel_cov_full.block<3,3>(0,0);
   std::copy_n(linear_accel_cov.data(), linear_accel_cov.size(), imu_ptr->linear_acceleration_covariance.data());
   prepareAcceleration(

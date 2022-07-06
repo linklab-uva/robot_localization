@@ -41,6 +41,7 @@ find_package(GeographicLib REQUIRED)
 set(library_name rl_lib)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
+  "msg/State.msg"
   "srv/FromLL.srv"
   "srv/GetState.srv"
   "srv/SetDatum.srv"
