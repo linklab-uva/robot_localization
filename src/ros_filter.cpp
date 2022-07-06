@@ -32,6 +32,7 @@
 #include "robot_localization/ros_filter.hpp"
 
 #include <algorithm>
+#include <array>
 #include <chrono>
 #include <cmath>
 #include <iomanip>
@@ -2336,6 +2337,22 @@ bool RosFilter<T>::setStateSrvCallback(
   std::shared_ptr<geometry_msgs::msg::TwistWithCovarianceStamped> twist_ptr = std::make_shared<geometry_msgs::msg::TwistWithCovarianceStamped>(request->twist);
   prepareTwist(
     twist_ptr, topic_name, world_frame_id_, update_vector, 
+      measurement, measurement_covariance);
+
+  // Prepare the acceleration data.
+  std::vector<bool> update_vector_imu(STATE_SIZE, false);
+  update_vector_imu[StateMemberAx]=update_vector_imu[StateMemberAy]=update_vector_imu[StateMemberAz]=true;
+  std::shared_ptr<sensor_msgs::msg::Imu> imu_ptr(new sensor_msgs::msg::Imu);
+  imu_ptr->set__header(request->accel.header);
+  imu_ptr->set__linear_acceleration(request->accel.accel.accel.linear);
+  Eigen::Matrix<double, 6, 6> accel_cov_full;
+  accel_cov_full.setIdentity();
+  accel_cov_full*=1e-6;
+  std::copy_n(request->accel.accel.covariance.begin(), request->accel.accel.covariance.size(), accel_cov_full.data());
+  Eigen::Matrix3d linear_accel_cov = accel_cov_full.block<3,3>(0,0);
+  std::copy_n(linear_accel_cov.data(), imu_ptr->linear_acceleration_covariance.size(), imu_ptr->linear_acceleration_covariance.data());
+  prepareAcceleration(
+    imu_ptr, topic_name, world_frame_id_, update_vector_imu, 
       measurement, measurement_covariance);
 
   // For the state
