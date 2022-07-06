@@ -2335,7 +2335,6 @@ void RosFilter<T>::setStateCallback(const robot_localization::msg::State::Shared
   msg_pose_covariance.setZero();
   std::copy_n(msg->pose.pose.covariance.begin(), msg->pose.pose.covariance.size(), msg_pose_covariance.data());
   if (msg_pose_covariance.isApprox(msg_pose_covariance.transpose())){
-    RCLCPP_INFO(get_logger(), "Setting pose");
     Eigen::Vector< std::complex< double >, 6 > eigenvalues = msg_pose_covariance.eigenvalues();
     bool all_real_and_nonnegative = true;
     for(std::complex< double > eigval : eigenvalues) { 
@@ -2343,6 +2342,7 @@ void RosFilter<T>::setStateCallback(const robot_localization::msg::State::Shared
         && eigval.real()>0.0 && std::abs(eigval.imag())<1E-6;
     }
     if(all_real_and_nonnegative){
+      RCLCPP_INFO(get_logger(), "Setting pose");
       // Prepare the pose data (really just using this to transform it into the
       // target frame). Twist data is going to get zeroed out, but we'll set it later.
       std::vector<bool> update_vector_pose(STATE_SIZE, false);
@@ -2363,7 +2363,6 @@ void RosFilter<T>::setStateCallback(const robot_localization::msg::State::Shared
   msg_twist_covariance.setZero();
   std::copy_n(msg->twist.twist.covariance.begin(), msg->twist.twist.covariance.size(), msg_twist_covariance.data());
   if (msg_twist_covariance.isApprox(msg_twist_covariance.transpose())){
-    RCLCPP_INFO(get_logger(), "Setting twist");
     Eigen::Vector< std::complex< double >, 6 > eigenvalues = msg_twist_covariance.eigenvalues();
     bool all_real_and_nonnegative = true;
     for(std::complex< double > eigval : eigenvalues) { 
@@ -2372,6 +2371,7 @@ void RosFilter<T>::setStateCallback(const robot_localization::msg::State::Shared
     }
     if(all_real_and_nonnegative) {
       // Prepare the twist data.
+      RCLCPP_INFO(get_logger(), "Setting twist");
       std::vector<bool> update_vector_twist(STATE_SIZE, false);
       update_vector_twist[StateMemberVx]=update_vector_twist[StateMemberVx]=update_vector_twist[StateMemberVx]=
       update_vector_twist[StateMemberVroll]=update_vector_twist[StateMemberVpitch]=update_vector_twist[StateMemberVyaw]=true;
@@ -2391,7 +2391,6 @@ void RosFilter<T>::setStateCallback(const robot_localization::msg::State::Shared
   std::copy_n(msg->accel.accel.covariance.begin(), msg->accel.accel.covariance.size(), msg_accel_covariance_full.data());
   Eigen::Matrix3d msg_accel_covariance = msg_accel_covariance_full.block<3,3>(0,0);
   if (msg_accel_covariance.isApprox(msg_accel_covariance.transpose())) {
-    RCLCPP_INFO(get_logger(), "Setting acceleration");
     Eigen::Vector3cd eigenvalues = msg_accel_covariance.eigenvalues();
     bool all_real_and_nonnegative = true;
     for(std::complex< double > eigval : eigenvalues) { 
@@ -2400,6 +2399,7 @@ void RosFilter<T>::setStateCallback(const robot_localization::msg::State::Shared
     }
     if(all_real_and_nonnegative){
       // Prepare the acceleration data.
+      RCLCPP_INFO(get_logger(), "Setting acceleration");
       std::vector<bool> update_vector_imu(STATE_SIZE, false);
       update_vector_imu[StateMemberAx]=update_vector_imu[StateMemberAy]=update_vector_imu[StateMemberAz]=true;
       std::shared_ptr<sensor_msgs::msg::Imu> imu_ptr(new sensor_msgs::msg::Imu);
