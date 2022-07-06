@@ -2333,6 +2333,7 @@ bool RosFilter<T>::setStateSrvCallback(
   preparePose(
     pose_ptr, topic_name, world_frame_id_, false, false, false,
       update_vector, measurement, measurement_covariance);
+      
   // Prepare the twist data.
   std::shared_ptr<geometry_msgs::msg::TwistWithCovarianceStamped> twist_ptr = std::make_shared<geometry_msgs::msg::TwistWithCovarianceStamped>(request->twist);
   prepareTwist(
