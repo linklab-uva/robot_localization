@@ -2291,11 +2291,14 @@ void RosFilter<T>::setPoseCallback(
 }
 template<typename T>
 bool RosFilter<T>::setStateSrvCallback(
-  const std::shared_ptr<rmw_request_id_t>/*request_header*/,
+  const std::shared_ptr<rmw_request_id_t> request_header,
   const std::shared_ptr<robot_localization::srv::SetState::Request> request,
-  std::shared_ptr<robot_localization::srv::SetState::Response>/*response*/)
+  std::shared_ptr<robot_localization::srv::SetState::Response> response)
 {
-  return true;
+  RCLCPP_DEBUG(get_logger(), "--setStateSrvCallback--");
+  RCLCPP_DEBUG(get_logger(), "sequence number: %lld. writer guid: %s", request_header->sequence_number, std::string((char*)&(request_header->writer_guid[0])).c_str());
+  response->set__success(true);
+  return response->success;
 }
 
 template<typename T>
