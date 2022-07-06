@@ -2304,7 +2304,7 @@ void RosFilter<T>::setPoseCallback(
 template<typename T>
 void RosFilter<T>::setStateCallback(const robot_localization::msg::State::SharedPtr msg)
 {
-std::string topic_name("set_state");
+  std::string topic_name("set_state");
 
   // Get rid of any initial poses (pretend we've never had a measurement)
   initial_measurements_.clear();
@@ -2334,13 +2334,15 @@ std::string topic_name("set_state");
   Eigen::Matrix<double, 6, 6> msg_pose_covariance;
   msg_pose_covariance.setZero();
   std::copy_n(msg->pose.pose.covariance.begin(), msg->pose.pose.covariance.size(), msg_pose_covariance.data());
-  if (msg_pose_covariance.isApprox(msg_pose_covariance.transpose()))
-  {
+  if (msg_pose_covariance.isApprox(msg_pose_covariance.transpose())){
+    RCLCPP_INFO(get_logger(), "Setting pose");
     Eigen::Vector< std::complex< double >, 6 > eigenvalues = msg_pose_covariance.eigenvalues();
     bool all_real_and_nonnegative = true;
-    for(std::complex< double > eigval : eigenvalues) { all_real_and_nonnegative = all_real_and_nonnegative && eigval.real()>=0.0 && std::abs(eigval.imag())<1E-6; }
-    if(all_real_and_nonnegative)
-    {
+    for(std::complex< double > eigval : eigenvalues) { 
+      all_real_and_nonnegative = all_real_and_nonnegative 
+        && eigval.real()>=0.0 && std::abs(eigval.imag())<1E-6;
+    }
+    if(all_real_and_nonnegative){
       // Prepare the pose data (really just using this to transform it into the
       // target frame). Twist data is going to get zeroed out, but we'll set it later.
       std::vector<bool> update_vector_pose(STATE_SIZE, false);
@@ -2350,19 +2352,25 @@ std::string topic_name("set_state");
       preparePose(
         pose_ptr, topic_name, world_frame_id_, false, false, false,
           update_vector_pose, measurement, measurement_covariance);
+    }else{
+      RCLCPP_INFO(get_logger(), "Not setting pose because pose covariance is not positive semi-definite");
     }
+  }else{
+    RCLCPP_INFO(get_logger(), "Not setting pose because pose covariance is not symmetric");
   }
 
   Eigen::Matrix<double, 6, 6> msg_twist_covariance;
   msg_twist_covariance.setZero();
   std::copy_n(msg->twist.twist.covariance.begin(), msg->twist.twist.covariance.size(), msg_twist_covariance.data());
-  if (msg_twist_covariance.isApprox(msg_twist_covariance.transpose()))
-  {
+  if (msg_twist_covariance.isApprox(msg_twist_covariance.transpose())){
+    RCLCPP_INFO(get_logger(), "Setting twist");
     Eigen::Vector< std::complex< double >, 6 > eigenvalues = msg_twist_covariance.eigenvalues();
     bool all_real_and_nonnegative = true;
-    for(std::complex< double > eigval : eigenvalues) { all_real_and_nonnegative = all_real_and_nonnegative && eigval.real()>=0.0 && std::abs(eigval.imag())<1E-6; }
-    if(all_real_and_nonnegative)
-    {
+    for(std::complex< double > eigval : eigenvalues) { 
+      all_real_and_nonnegative = all_real_and_nonnegative 
+        && eigval.real()>=0.0 && std::abs(eigval.imag())<1E-6;
+    }
+    if(all_real_and_nonnegative) {
       // Prepare the twist data.
       std::vector<bool> update_vector_twist(STATE_SIZE, false);
       update_vector_twist[StateMemberVx]=update_vector_twist[StateMemberVx]=update_vector_twist[StateMemberVx]=
@@ -2371,20 +2379,26 @@ std::string topic_name("set_state");
       prepareTwist(
         twist_ptr, topic_name, world_frame_id_, update_vector_twist, 
           measurement, measurement_covariance);
+    }else{
+      RCLCPP_INFO(get_logger(), "Not setting twist because twist covariance is not positive semi-definite");
     }
+  }else{
+      RCLCPP_INFO(get_logger(), "Not setting twist because twist covariance is not symmetric");
   }
 
   Eigen::Matrix<double, 6, 6> msg_accel_covariance_full;
   msg_accel_covariance_full.setZero();
   std::copy_n(msg->accel.accel.covariance.begin(), msg->accel.accel.covariance.size(), msg_accel_covariance_full.data());
   Eigen::Matrix3d msg_accel_covariance = msg_accel_covariance_full.block<3,3>(0,0);
-  if (msg_accel_covariance.isApprox(msg_accel_covariance.transpose()))
-  {
+  if (msg_accel_covariance.isApprox(msg_accel_covariance.transpose())) {
+    RCLCPP_INFO(get_logger(), "Setting acceleration");
     Eigen::Vector3cd eigenvalues = msg_accel_covariance.eigenvalues();
     bool all_real_and_nonnegative = true;
-    for(std::complex< double > eigval : eigenvalues) { all_real_and_nonnegative = all_real_and_nonnegative && eigval.real()>=0.0 && std::abs(eigval.imag())<1E-6; }
-    if(all_real_and_nonnegative)
-    {
+    for(std::complex< double > eigval : eigenvalues) { 
+      all_real_and_nonnegative = all_real_and_nonnegative 
+        && eigval.real()>=0.0 && std::abs(eigval.imag())<1E-6;
+    }
+    if(all_real_and_nonnegative){
       // Prepare the acceleration data.
       std::vector<bool> update_vector_imu(STATE_SIZE, false);
       update_vector_imu[StateMemberAx]=update_vector_imu[StateMemberAy]=update_vector_imu[StateMemberAz]=true;
@@ -2395,9 +2409,12 @@ std::string topic_name("set_state");
       prepareAcceleration(
         imu_ptr, topic_name, world_frame_id_, update_vector_imu, 
           measurement, measurement_covariance);
+    }else{
+      RCLCPP_INFO(get_logger(), "Not setting acceleration because acceleration covariance is not positive semi-definite");
     }
+  }else{
+    RCLCPP_INFO(get_logger(), "Not setting acceleration because acceleration covariance is not symmetric");
   }
-
   // For the state
   filter_.setState(measurement);
   filter_.setEstimateErrorCovariance(measurement_covariance);
