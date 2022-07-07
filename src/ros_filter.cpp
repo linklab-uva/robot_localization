@@ -2396,11 +2396,13 @@ void RosFilter<T>::setStateCallback(const robot_localization::msg::State::Shared
       // Prepare the acceleration data.
       RCLCPP_INFO(get_logger(), "Setting acceleration");
       std::shared_ptr<sensor_msgs::msg::Imu> imu_ptr(new sensor_msgs::msg::Imu);
+      std::vector<bool> update_vector_imu(msg->update_vector.begin(), msg->update_vector.end());
+      update_vector_imu[StateMemberVroll]=update_vector_imu[StateMemberVpitch]=update_vector_imu[StateMemberVyaw]=false;
       imu_ptr->set__header(msg->accel.header);
       imu_ptr->set__linear_acceleration(msg->accel.accel.accel.linear);
       std::copy_n(msg_accel_covariance.data(), msg_accel_covariance.size(), imu_ptr->linear_acceleration_covariance.data());
       prepareAcceleration(
-        imu_ptr, topic_name, world_frame_id_, update_vector, 
+        imu_ptr, topic_name, world_frame_id_, update_vector_imu, 
           measurement, measurement_covariance);
     }else{
       RCLCPP_INFO(get_logger(), "Not setting acceleration because acceleration covariance is not positive definite");
