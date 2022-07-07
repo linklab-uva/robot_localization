@@ -1556,6 +1556,7 @@ void RosFilter<T>::loadParams()
         false);
       remove_gravitational_acceleration_[imu_topic_name + "_acceleration"] =
         remove_grav_acc;
+      remove_gravitational_acceleration_["set_state"] = false;
 
       // Set optional custom queue size
       int queue_size = this->declare_parameter(
