@@ -2397,7 +2397,8 @@ void RosFilter<T>::setStateCallback(const robot_localization::msg::State::Shared
       RCLCPP_INFO(get_logger(), "Setting acceleration");
       std::shared_ptr<sensor_msgs::msg::Imu> imu_ptr(new sensor_msgs::msg::Imu);
       std::vector<bool> update_vector_imu(msg->update_vector.begin(), msg->update_vector.end());
-      update_vector_imu[StateMemberVroll]=update_vector_imu[StateMemberVpitch]=update_vector_imu[StateMemberVyaw]=false;
+      update_vector_imu[StateMemberVroll]=update_vector_imu[StateMemberVpitch]=update_vector_imu[StateMemberVyaw]=
+      update_vector_imu[StateMemberRoll]=update_vector_imu[StateMemberPitch]=update_vector_imu[StateMemberYaw]=false;
       imu_ptr->set__header(msg->accel.header);
       imu_ptr->set__linear_acceleration(msg->accel.accel.accel.linear);
       std::copy_n(msg_accel_covariance.data(), msg_accel_covariance.size(), imu_ptr->linear_acceleration_covariance.data());
