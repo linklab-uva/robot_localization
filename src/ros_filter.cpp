@@ -110,12 +110,14 @@ RosFilter<T>::~RosFilter()
   topic_subs_.clear();
   timer_.reset();
   set_pose_sub_.reset();
+  set_state_sub_.reset();
   control_sub_.reset();
   tf_listener_.reset();
   tf_buffer_.reset();
   diagnostic_updater_.reset();
   world_transform_broadcaster_.reset();
   set_pose_service_.reset();
+  set_state_service_.reset();
   freq_diag_.reset();
   accel_pub_.reset();
   position_pub_.reset();
@@ -1034,6 +1036,19 @@ void RosFilter<T>::loadParams()
     this->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
     "set_pose", rclcpp::QoS(1),
     std::bind(&RosFilter<T>::setPoseCallback, this, std::placeholders::_1));
+
+  // Create a subscriber for manually setting/resetting state
+  set_state_sub_ =
+    this->create_subscription<robot_localization::msg::State>(
+    "set_state", rclcpp::QoS(1),
+    std::bind(&RosFilter<T>::setStateCallback, this, std::placeholders::_1));
+
+  // Create a service for manually setting/resetting state
+  set_state_service_ =
+    this->create_service<robot_localization::srv::SetState>(
+    "set_state", std::bind(
+      &RosFilter<T>::setStateSrvCallback, this,
+      std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
   // Create a service for manually setting/resetting pose
   set_pose_service_ =

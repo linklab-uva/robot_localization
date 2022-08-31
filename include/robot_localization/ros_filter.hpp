@@ -752,6 +752,12 @@ protected:
   rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr
     set_pose_sub_;
 
+  //! @brief Subscribes to the set_state topic
+  //! Message type is robot_localization/State.
+  //!
+  rclcpp::Subscription<robot_localization::msg::State>::SharedPtr
+    set_state_sub_;
+
   //! @brief Service that allows another node to change the current pose and
   //! recieve a confirmation. Uses a custom SetPose service.
   //!
