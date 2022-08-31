@@ -2176,6 +2176,11 @@ void RosFilter<T>::periodicUpdate()
       "sensor output frequency, or limiting the number of sensors.\n";
   }
 }
+template<typename T>
+void RosFilter<T>::setStateCallback(
+  const robot_localization::msg::State::SharedPtr msg)
+{
+}
 
 template<typename T>
 void RosFilter<T>::setPoseCallback(
@@ -2227,6 +2232,20 @@ void RosFilter<T>::setPoseCallback(
   filter_.setLastMeasurementTime(this->now());
 
   RF_DEBUG("\n------ /RosFilter<T>::setPoseCallback ------\n");
+}
+
+template<typename T>
+bool RosFilter<T>::setStateSrvCallback(
+  const std::shared_ptr<rmw_request_id_t>/*request_header*/,
+  const std::shared_ptr<robot_localization::srv::SetState::Request> request,
+  std::shared_ptr<robot_localization::srv::SetState::Response>/*response*/)
+{
+  robot_localization::msg::State::SharedPtr msg =
+    std::make_shared<robot_localization::msg::State>(
+    request->state);
+  setStateCallback(msg);
+
+  return true;
 }
 
 template<typename T>
