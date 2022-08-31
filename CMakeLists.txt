@@ -60,7 +60,6 @@ rosidl_generate_interfaces(${PROJECT_NAME}
 include_directories(SYSTEM ${Eigen_INCLUDE_DIRS})
 include_directories(
   include
-  ${EIGEN3_INCLUDE_DIRS}
   ${Boost_INCLUDE_DIRS}
 )
 
@@ -102,7 +101,7 @@ add_executable(
 target_link_libraries(
   ${library_name}
   ${GeographicLib_LIBRARIES}
-  ${EIGEN3_LIBRARIES}
+  Eigen3::Eigen
 )
 
 ament_target_dependencies(
