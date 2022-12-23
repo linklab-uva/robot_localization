@@ -2293,7 +2293,7 @@ void RosFilter<T>::setStateCallback(
       // target frame). Twist data is going to get zeroed out, but we'll set it later.
       std::shared_ptr<geometry_msgs::msg::PoseWithCovarianceStamped> pose_ptr = std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>(msg->pose);
       preparePose(
-        pose_ptr, topic_name, world_frame_id_, false, false, false,
+        pose_ptr, topic_name, world_frame_id_, base_link_frame_id_, false, false, false,
           update_vector, measurement, measurement_covariance);
     }else{
       RCLCPP_INFO(get_logger(), "Not setting pose because pose covariance is not positive definite");
@@ -2350,7 +2350,7 @@ void RosFilter<T>::setStateCallback(
       imu_ptr->set__linear_acceleration(msg->accel.accel.accel.linear);
       std::copy_n(msg_accel_covariance.data(), msg_accel_covariance.size(), imu_ptr->linear_acceleration_covariance.data());
       prepareAcceleration(
-        imu_ptr, topic_name, world_frame_id_, update_vector_imu, 
+        imu_ptr, topic_name, world_frame_id_, false, update_vector_imu, 
           measurement, measurement_covariance);
     }else{
       RCLCPP_INFO(get_logger(), "Not setting acceleration because acceleration covariance is not positive definite");
