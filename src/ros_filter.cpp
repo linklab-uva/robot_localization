@@ -380,6 +380,7 @@ bool RosFilter<T>::getFilteredOdometryMessage(nav_msgs::msg::Odometry * message)
     quat.setRPY(
       state(StateMemberRoll), state(StateMemberPitch),
       state(StateMemberYaw));
+    const rclcpp::Time& now = this->get_clock()->now();
 
     // Fill out the message
     message->pose.pose.position.x = state(StateMemberX);
@@ -416,7 +417,8 @@ bool RosFilter<T>::getFilteredOdometryMessage(nav_msgs::msg::Odometry * message)
       }
     }
 
-    message->header.stamp = filter_.getLastMeasurementTime();
+    // message->header.stamp = filter_.getLastMeasurementTime();
+    message->header.stamp = now;
     message->header.frame_id = world_frame_id_;
     message->child_frame_id = base_link_output_frame_id_;
   }
@@ -2147,13 +2149,16 @@ void RosFilter<T>::periodicUpdate()
     // Fire off the position and the transform
     if (!corrected_data) {
       position_pub_->publish(std::move(filtered_position));
+      if (print_diagnostics_) {
+        freq_diag_->tick();
+      }
     }
+    // position_pub_->publish(std::move(filtered_position));
 
-    if (print_diagnostics_) {
-      freq_diag_->tick();
-    }
+    
   }
 
+  //!corrected_data && 
   // Publish the acceleration if desired and filter is initialized
   auto filtered_acceleration = std::make_unique<geometry_msgs::msg::AccelWithCovarianceStamped>();
   if (!corrected_data && publish_acceleration_ &&
