@@ -2388,9 +2388,10 @@ void RosFilter<T>::setStateCallback(const robot_localization::msg::State::Shared
   msg_pose_covariance.setZero();
   std::copy_n(msg->pose.pose.covariance.begin(), msg->pose.pose.covariance.size(), msg_pose_covariance.data());
   if (msg_pose_covariance.isApprox(msg_pose_covariance.transpose())){
-    Eigen::Vector< std::complex< double >, 6 > eigenvalues = msg_pose_covariance.eigenvalues();
+    Eigen::VectorXcd eigenvalues = msg_pose_covariance.eigenvalues();
     bool all_real_and_nonnegative = true;
-    for(std::complex< double > eigval : eigenvalues) { 
+    for(std::size_t i = 0; i < eigenvalues.size(); i++) { 
+      const std::complex< double >& eigval = eigenvalues[i];
       all_real_and_nonnegative = all_real_and_nonnegative 
         && eigval.real()>0.0 && std::abs(eigval.imag())<1E-6;
     }
@@ -2400,7 +2401,7 @@ void RosFilter<T>::setStateCallback(const robot_localization::msg::State::Shared
       // target frame). Twist data is going to get zeroed out, but we'll set it later.
       std::shared_ptr<geometry_msgs::msg::PoseWithCovarianceStamped> pose_ptr = std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>(msg->pose);
       preparePose(
-        pose_ptr, topic_name, world_frame_id_, false, false, false,
+        pose_ptr, topic_name, world_frame_id_, base_link_frame_id_, false, false, false,
           update_vector, measurement, measurement_covariance);
     }else{
       RCLCPP_INFO(get_logger(), "Not setting pose because pose covariance is not positive definite");
@@ -2413,9 +2414,10 @@ void RosFilter<T>::setStateCallback(const robot_localization::msg::State::Shared
   msg_twist_covariance.setZero();
   std::copy_n(msg->twist.twist.covariance.begin(), msg->twist.twist.covariance.size(), msg_twist_covariance.data());
   if (msg_twist_covariance.isApprox(msg_twist_covariance.transpose())){
-    Eigen::Vector< std::complex< double >, 6 > eigenvalues = msg_twist_covariance.eigenvalues();
+    Eigen::VectorXcd eigenvalues = msg_twist_covariance.eigenvalues();
     bool all_real_and_nonnegative = true;
-    for(std::complex< double > eigval : eigenvalues) { 
+    for(std::size_t i = 0; i < eigenvalues.size(); i++) { 
+      const std::complex< double >& eigval = eigenvalues[i];
       all_real_and_nonnegative = all_real_and_nonnegative 
         && eigval.real()>0.0 && std::abs(eigval.imag())<1E-6;
     }
@@ -2424,7 +2426,7 @@ void RosFilter<T>::setStateCallback(const robot_localization::msg::State::Shared
       RCLCPP_INFO(get_logger(), "Setting twist");
       std::shared_ptr<geometry_msgs::msg::TwistWithCovarianceStamped> twist_ptr = std::make_shared<geometry_msgs::msg::TwistWithCovarianceStamped>(msg->twist);
       prepareTwist(
-        twist_ptr, topic_name, world_frame_id_, update_vector, 
+        twist_ptr, topic_name, base_link_frame_id_, update_vector, 
           measurement, measurement_covariance);
     }else{
       RCLCPP_INFO(get_logger(), "Not setting twist because twist covariance is not positive definite");
@@ -2440,7 +2442,8 @@ void RosFilter<T>::setStateCallback(const robot_localization::msg::State::Shared
   if (msg_accel_covariance.isApprox(msg_accel_covariance.transpose())) {
     Eigen::Vector3cd eigenvalues = msg_accel_covariance.eigenvalues();
     bool all_real_and_nonnegative = true;
-    for(std::complex< double > eigval : eigenvalues) { 
+    for(std::size_t i = 0; i < eigenvalues.size(); i++) { 
+      const std::complex< double >& eigval = eigenvalues[i];
       all_real_and_nonnegative = all_real_and_nonnegative 
         && eigval.real()>0.0 && std::abs(eigval.imag())<1E-6;
     }
@@ -2455,7 +2458,7 @@ void RosFilter<T>::setStateCallback(const robot_localization::msg::State::Shared
       imu_ptr->set__linear_acceleration(msg->accel.accel.accel.linear);
       std::copy_n(msg_accel_covariance.data(), msg_accel_covariance.size(), imu_ptr->linear_acceleration_covariance.data());
       prepareAcceleration(
-        imu_ptr, topic_name, world_frame_id_, update_vector_imu, 
+        imu_ptr, topic_name, base_link_frame_id_, false, update_vector_imu, 
           measurement, measurement_covariance);
     }else{
       RCLCPP_INFO(get_logger(), "Not setting acceleration because acceleration covariance is not positive definite");
