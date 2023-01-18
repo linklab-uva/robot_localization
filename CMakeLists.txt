@@ -76,24 +76,8 @@ add_library(
   src/ros_filter_utilities.cpp
   src/ros_robot_localization_listener.cpp)
 
-find_package(ros_environment REQUIRED)
 
-set(old_distros)
-list(APPEND old_distros "foxy")
-list(APPEND old_distros "galactic")
-set(new_distros)
-list(APPEND new_distros "rolling")
-list(APPEND new_distros "humble")
-set(distro $ENV{ROS_DISTRO})
-if(distro IN_LIST old_distros)
-  rosidl_target_interfaces(${library_name}
-    ${PROJECT_NAME} "rosidl_typesupport_cpp")
-elseif(distro IN_LIST new_distros)
-  rosidl_get_typesupport_target(cpp_typesupport_target "${PROJECT_NAME}" "rosidl_typesupport_cpp")
-  target_link_libraries(${library_name} "${cpp_typesupport_target}")
-else()
-  message(FATAL_ERROR "ROS2 Distro ${distro} not supported.")
-endif()
+rosidl_get_typesupport_target(cpp_typesupport_target ${PROJECT_NAME} "rosidl_typesupport_cpp")
 
 
 
@@ -127,6 +111,7 @@ target_link_libraries(
   ${library_name}
   ${GeographicLib_LIBRARIES}
   ${EIGEN3_LIBRARIES}
+  ${cpp_typesupport_target}
 )
 
 ament_target_dependencies(
