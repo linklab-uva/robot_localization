@@ -2390,7 +2390,7 @@ void RosFilter<T>::setStateCallback(const robot_localization::msg::State::Shared
   if (msg_pose_covariance.isApprox(msg_pose_covariance.transpose())){
     Eigen::VectorXcd eigenvalues = msg_pose_covariance.eigenvalues();
     bool all_real_and_nonnegative = true;
-    for(std::size_t i = 0; i < eigenvalues.size(); i++) { 
+    for(std::size_t i = 0; i < static_cast<std::size_t>(eigenvalues.size()); i++) { 
       const std::complex< double >& eigval = eigenvalues[i];
       all_real_and_nonnegative = all_real_and_nonnegative 
         && eigval.real()>0.0 && std::abs(eigval.imag())<1E-6;
@@ -2416,7 +2416,7 @@ void RosFilter<T>::setStateCallback(const robot_localization::msg::State::Shared
   if (msg_twist_covariance.isApprox(msg_twist_covariance.transpose())){
     Eigen::VectorXcd eigenvalues = msg_twist_covariance.eigenvalues();
     bool all_real_and_nonnegative = true;
-    for(std::size_t i = 0; i < eigenvalues.size(); i++) { 
+    for(std::size_t i = 0; i < static_cast<std::size_t>(eigenvalues.size()); i++) { 
       const std::complex< double >& eigval = eigenvalues[i];
       all_real_and_nonnegative = all_real_and_nonnegative 
         && eigval.real()>0.0 && std::abs(eigval.imag())<1E-6;
@@ -2442,7 +2442,7 @@ void RosFilter<T>::setStateCallback(const robot_localization::msg::State::Shared
   if (msg_accel_covariance.isApprox(msg_accel_covariance.transpose())) {
     Eigen::Vector3cd eigenvalues = msg_accel_covariance.eigenvalues();
     bool all_real_and_nonnegative = true;
-    for(std::size_t i = 0; i < eigenvalues.size(); i++) { 
+    for(std::size_t i = 0; i < static_cast<std::size_t>(eigenvalues.size()); i++) { 
       const std::complex< double >& eigval = eigenvalues[i];
       all_real_and_nonnegative = all_real_and_nonnegative 
         && eigval.real()>0.0 && std::abs(eigval.imag())<1E-6;
