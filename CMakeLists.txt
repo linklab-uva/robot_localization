@@ -174,6 +174,13 @@ ament_target_dependencies(
   rclcpp
 )
 
+find_package(rclcpp_components REQUIRED)
+add_library(${PROJECT_NAME}_nodes
+  src/composable_nodes.cpp
+)
+target_link_libraries(${PROJECT_NAME}_nodes ${library_name})
+ament_target_dependencies(${PROJECT_NAME}_nodes rclcpp_components)
+
 if(BUILD_TESTING)
   find_package(ament_cmake_gtest REQUIRED)
   find_package(ament_cmake_cppcheck REQUIRED)
