@@ -364,7 +364,7 @@ install(
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 
-install(TARGETS ${library_name}
+install(TARGETS ${library_name} ${PROJECT_NAME}_nodes
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
