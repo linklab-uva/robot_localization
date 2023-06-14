@@ -41,10 +41,12 @@ find_package(GeographicLib REQUIRED)
 set(library_name rl_lib)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
+  "msg/State.msg"
   "srv/FromLL.srv"
   "srv/GetState.srv"
   "srv/SetDatum.srv"
   "srv/SetPose.srv"
+  "srv/SetState.srv"
   "srv/ToggleFilterProcessing.srv"
   "srv/ToLL.srv"
   DEPENDENCIES
@@ -339,6 +341,8 @@ install(DIRECTORY
   DESTINATION share/${PROJECT_NAME}
   USE_SOURCE_PERMISSIONS
 )
+
+install(DIRECTORY include/ DESTINATION include)
 
 ament_export_include_directories(include)
 ament_export_libraries(${library_name})

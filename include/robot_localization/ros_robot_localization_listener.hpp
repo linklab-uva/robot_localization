@@ -82,10 +82,7 @@ public:
   //!
   //! @param[in] node - rclcpp node shared pointer
   //!
-  explicit RosRobotLocalizationListener(
-    rclcpp::Node::SharedPtr node,
-    rclcpp::SubscriptionOptions options =
-    detail::get_subscription_options_with_default_qos_override_policies());
+  explicit RosRobotLocalizationListener(rclcpp::Node::SharedPtr node);
 
   //! @brief Destructor
   //!
