@@ -173,6 +173,7 @@ void RosFilter<T>::toggleFilterProcessingCallback(
     toggled_on_ = req->on;
     resp->status = true;
   }
+  resp->toggle_state = toggled_on_;
 }
 
 // @todo: Replace with AccelWithCovarianceStamped
